@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "MVP-Apartment",
+    "slug": "MVP-Apartment",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "mvpapartment",
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "web": {
+      "output": "static"
+    }
+  }
+}

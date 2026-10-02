@@ -214,16 +214,14 @@ describe("BookingContext", () => {
     expect(JSON.parse(stored!)).toEqual(secondBooking);
   });
 
-  it("throws when useBookings is used outside BookingProvider", async () => {
+  it("throws when useBookings is used outside BookingProvider", () => {
     const consoleError = jest
       .spyOn(console, "error")
-      .mockImplementation(() => {});
+      .mockImplementation(() => { });
 
-    await expect(
-      renderHook(() => useBookings())
-    ).rejects.toThrow(
-      "useBookings must be used inside a BookingProvider"
-    );
+    expect(() => {
+      renderHook(() => useBookings());
+    }).toThrow("useBookings must be used inside a BookingProvider");
 
     consoleError.mockRestore();
   });

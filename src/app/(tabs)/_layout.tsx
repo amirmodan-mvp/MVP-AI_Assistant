@@ -1,74 +1,29 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Tabs } from 'expo-router';
+import { BookOpen, CheckCircle2, Home, Menu, Sparkles } from 'lucide-react-native';
+import { Colors } from '../../constants/theme';
 
-const GREEN = "#1E3D2F";
-const MUTED = "#6C706A";
-
-export default function TabsLayout() {
+export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: GREEN,
-        tabBarInactiveTintColor: MUTED,
+        tabBarActiveTintColor: Colors.purple,
+        tabBarInactiveTintColor: '#AAA4AE',
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
-          borderTopColor: "rgba(0,0,0,0.06)",
-          height: 66,
-          paddingTop: 7,
-          paddingBottom: 7,
+          height: 64,
+          paddingTop: 5,
+          paddingBottom: 6,
+          borderTopColor: '#EEEBED',
+          backgroundColor: '#FFFFFF',
         },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: "500",
-        },
+        tabBarLabelStyle: { fontSize: 9, fontWeight: '700' },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "home" : "home-outline"} size={20} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="pay"
-        options={{
-          title: "Pay",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "card" : "card-outline"} size={20} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="maintenance"
-        options={{
-          title: "Service",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "construct" : "construct-outline"} size={20} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="amenities"
-        options={{
-          title: "Amenities",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "calendar" : "calendar-outline"} size={20} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: "More",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "ellipsis-horizontal-circle" : "ellipsis-horizontal-circle-outline"} size={20} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color, size }) => <Home color={color} size={size} /> }} />
+      <Tabs.Screen name="ai" options={{ title: 'Ask AI', tabBarIcon: ({ color, size }) => <Sparkles color={color} size={size} /> }} />
+      <Tabs.Screen name="tasks" options={{ title: 'Tasks', tabBarIcon: ({ color, size }) => <CheckCircle2 color={color} size={size} /> }} />
+      <Tabs.Screen name="notes" options={{ title: 'Notes', tabBarIcon: ({ color, size }) => <BookOpen color={color} size={size} /> }} />
+      <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: ({ color, size }) => <Menu color={color} size={size} /> }} />
     </Tabs>
   );
 }

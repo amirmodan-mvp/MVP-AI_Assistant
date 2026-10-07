@@ -1,6 +1,9 @@
 export type Tab = 'home' | 'ai' | 'tasks' | 'notes' | 'more';
 
-export type TaskDue = 'Today' | 'Tomorrow' | 'Upcoming';
+export type TaskDue =
+  | 'Today'
+  | 'Tomorrow'
+  | 'Upcoming';
 
 export type Task = {
   id: number;
@@ -19,6 +22,23 @@ export type ResponseCardType =
   | 'schedule'
   | 'note';
 
+export type TaskAction =
+  | {
+      type: 'toggle';
+      taskId: number;
+    }
+  | {
+      type: 'remove';
+      taskId: number;
+    }
+  | {
+      type: 'update';
+      taskId: number;
+      title?: string;
+      due?: TaskDue;
+      time?: string;
+    };
+
 export type Message = {
   id: number;
   role: 'user' | 'assistant';
@@ -27,6 +47,10 @@ export type Message = {
   taskTitle?: string;
   taskDue?: TaskDue;
   taskTime?: string;
+  imageUri?: string;
+  documentUri?: string;
+  documentName?: string;
+  taskAction?: TaskAction;
 };
 
 export type Panel =

@@ -36,7 +36,11 @@ import { ResponseCard } from '../../components/ResponseCard';
 import { Colors } from '../../constants/theme';
 import { useTasks } from '../../context/TaskContext';
 import { createAIResponse } from '../../lib/assistant';
-import type { Message, TaskAction, TaskDue } from '../../types/assistant';
+import type {
+  Message,
+  TaskAction,
+  TaskDue,
+} from '../../types/assistant';
 
 type AttachedDocument = {
   uri: string;
@@ -54,13 +58,16 @@ export default function AIScreen() {
   const [draft, setDraft] = useState('');
   const [checkedList, setCheckedList] = useState<string[]>([]);
   const [isThinking, setIsThinking] = useState(false);
-  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [attachedImage, setAttachedImage] = useState<string | null>(
+    null,
+  );
   const [attachedDocument, setAttachedDocument] =
     useState<AttachedDocument | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
   const promptHandled = useRef(false);
+
   const {
     tasks,
     addTask: addSharedTask,
@@ -198,7 +205,9 @@ export default function AIScreen() {
   ) => {
     const text = value.trim();
 
-    if ((!text && !imageUri && !document) || isThinking) return;
+    if ((!text && !imageUri && !document) || isThinking) {
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now(),
@@ -234,15 +243,17 @@ export default function AIScreen() {
         tasks,
       );
 
-      if (response.taskAction) {
-        executeTaskAction(response.taskAction);
+      const { taskAction, ...messageResponse } = response;
+
+      if (taskAction) {
+        executeTaskAction(taskAction);
       }
 
       setMessages(current => [
         ...current,
         {
           id: Date.now(),
-          ...response,
+          ...messageResponse,
         },
       ]);
 
@@ -294,7 +305,6 @@ export default function AIScreen() {
         mimeType: asset.mimeType,
       });
 
-      // A document and photo are mutually exclusive attachments.
       setAttachedImage(null);
 
       scrollToBottom();
@@ -318,8 +328,6 @@ export default function AIScreen() {
 
     if (!result.canceled && result.assets[0]?.uri) {
       setAttachedImage(result.assets[0].uri);
-
-      // A document and photo are mutually exclusive attachments.
       setAttachedDocument(null);
 
       scrollToBottom();
@@ -389,7 +397,9 @@ export default function AIScreen() {
               <Orb />
             </View>
 
-            <Text style={styles.emptyTitle}>What's on your mind?</Text>
+            <Text style={styles.emptyTitle}>
+              What's on your mind?
+            </Text>
 
             <Text style={styles.emptyText}>
               I'm here to help you find the next step, big or small.
@@ -397,13 +407,17 @@ export default function AIScreen() {
 
             <View style={styles.suggestions}>
               <Suggestion
-                icon={<CalendarDays size={18} color="#906BBF" />}
+                icon={
+                  <CalendarDays size={18} color="#906BBF" />
+                }
                 label="Plan my day"
                 onPress={() => ask('Plan my day')}
               />
 
               <Suggestion
-                icon={<WandSparkles size={18} color="#906BBF" />}
+                icon={
+                  <WandSparkles size={18} color="#906BBF" />
+                }
                 label="Help me make a decision"
                 onPress={() =>
                   ask('Help me decide between two options')
@@ -411,7 +425,9 @@ export default function AIScreen() {
               />
 
               <Suggestion
-                icon={<ListTodo size={18} color="#906BBF" />}
+                icon={
+                  <ListTodo size={18} color="#906BBF" />
+                }
                 label="Make a checklist"
                 onPress={() =>
                   ask('Create a grocery checklist')
@@ -1138,7 +1154,3 @@ const styles = StyleSheet.create({
     color: '#C7C0CB',
   },
 });
-
-function executeTaskAction(taskAction: any) {
-  throw new Error('Function not implemented.');
-}

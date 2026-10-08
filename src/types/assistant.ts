@@ -24,20 +24,20 @@ export type ResponseCardType =
 
 export type TaskAction =
   | {
-      type: 'toggle';
-      taskId: number;
-    }
+    type: 'toggle';
+    taskId: number;
+  }
   | {
-      type: 'remove';
-      taskId: number;
-    }
+    type: 'remove';
+    taskId: number;
+  }
   | {
-      type: 'update';
-      taskId: number;
-      title?: string;
-      due?: TaskDue;
-      time?: string;
-    };
+    type: 'update';
+    taskId: number;
+    title?: string;
+    due?: TaskDue;
+    time?: string;
+  };
 
 export type Message = {
   id: number;

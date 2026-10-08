@@ -225,7 +225,9 @@ function createTaskModificationResponse(
   }
 
   /*
+   * ---------------------------------------------------------
    * COMPLETE / MARK DONE
+   * ---------------------------------------------------------
    */
 
   const completeTarget = extractTaskTarget(text, [
@@ -263,7 +265,9 @@ function createTaskModificationResponse(
   }
 
   /*
+   * ---------------------------------------------------------
    * DELETE / REMOVE
+   * ---------------------------------------------------------
    */
 
   const deleteTarget = extractTaskTarget(text, [
@@ -293,7 +297,233 @@ function createTaskModificationResponse(
   }
 
   /*
+   * ---------------------------------------------------------
+   * RESCHEDULE / MOVE TO DATE AND/OR TIME
+   *
+   * Examples:
+   * "reschedule dentist to tomorrow"
+   * "reschedule dentist to tomorrow at 3 PM"
+   * "move dentist to tomorrow at 3 PM"
+   * "move dentist to 3 PM"
+   * ---------------------------------------------------------
+   */
+
+  const rescheduleMatch = text.match(
+    /^(?:reschedule|move|change|set|schedule|push)\s+(?:the\s+)?(?:time\s+of\s+)?(?:my\s+|the\s+)?(.+?)\s+(?:to|for)\s+(?:(today|tomorrow|upcoming)(?:\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm))?|(\d{1,2})(?::(\d{2}))?\s*(am|pm))$/i,
+  );
+
+  if (rescheduleMatch) {
+    const target = cleanReferencedTaskName(
+      rescheduleMatch[1],
+    );
+
+    const dueValue = rescheduleMatch[2];
+    const dateHour = rescheduleMatch[3];
+    const dateMinute = rescheduleMatch[4];
+    const datePeriod = rescheduleMatch[5];
+
+    const timeOnlyHour = rescheduleMatch[6];
+    const timeOnlyMinute = rescheduleMatch[7];
+    const timeOnlyPeriod = rescheduleMatch[8];
+
+    const due = dueValue
+      ? normalizeDue(dueValue)
+      : undefined;
+
+    const time =
+      dateHour && datePeriod
+        ? formatTime(
+          dateHour,
+          dateMinute,
+          datePeriod,
+        )
+        : timeOnlyHour && timeOnlyPeriod
+          ? formatTime(
+            timeOnlyHour,
+            timeOnlyMinute,
+            timeOnlyPeriod,
+          )
+          : undefined;
+
+    if (target && (due || time)) {
+      const task = findTask(target, tasks);
+
+      if (task) {
+        const changes: {
+          due?: TaskDue;
+          time?: string;
+        } = {};
+
+        if (due && task.due !== due) {
+          changes.due = due;
+        }
+
+        if (time && task.time !== time) {
+          changes.time = time;
+        }
+
+        if (!Object.keys(changes).length) {
+          const scheduleText =
+            due && time
+              ? `${due.toLowerCase()} at ${time}`
+              : due
+                ? due.toLowerCase()
+                : time
+                  ? time
+                  : '';
+
+          return {
+            role: 'assistant',
+            text: `"${task.title}" is already scheduled for ${scheduleText}.`,
+          };
+        }
+
+
+        const parts: string[] = [];
+
+        if (due) {
+          parts.push(due.toLowerCase());
+        }
+
+        if (time) {
+          parts.push(`at ${time}`);
+        }
+
+        return {
+          role: 'assistant',
+          text: `Done. I've moved "${task.title}" to ${parts.join(
+            ' ',
+          )}.`,
+          taskAction: {
+            type: 'update',
+            taskId: task.id,
+            ...changes,
+          },
+        };
+      }
+
+
+      return createTaskNotFoundResponse(
+        target,
+        tasks,
+      );
+    }
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * CHANGE TIME
+   *
+   * Examples:
+   * "change the time of dentist to 3 PM"
+   * "change dentist to 3 PM"
+   * "move dentist to 3 PM"
+   * ---------------------------------------------------------
+   */
+
+  const timeMatch = text.match(
+    /^(?:change|move|set)\s+(?:the\s+)?(?:time\s+of\s+)?(?:my\s+|the\s+)?(.+?)\s+(?:to|at)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/i,
+  );
+
+  if (timeMatch) {
+    const target = cleanReferencedTaskName(
+      timeMatch[1],
+    );
+
+    const time = formatTime(
+      timeMatch[2],
+      timeMatch[3],
+      timeMatch[4],
+    );
+
+    if (target && time) {
+      const task = findTask(target, tasks);
+
+      if (task) {
+        if (task.time === time) {
+          return {
+            role: 'assistant',
+            text: `"${task.title}" is already scheduled for ${time}.`,
+          };
+        }
+
+        return {
+          role: 'assistant',
+          text: `Done. I've changed "${task.title}" to ${time}.`,
+          taskAction: {
+            type: 'update',
+            taskId: task.id,
+            time,
+          },
+        };
+      }
+
+      return createTaskNotFoundResponse(
+        target,
+        tasks,
+      );
+    }
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * CHANGE DUE DATE
+   *
+   * Examples:
+   * "move dentist to tomorrow"
+   * "change dentist to today"
+   * "reschedule dentist for upcoming"
+   * ---------------------------------------------------------
+   */
+
+  const dueMatch = text.match(
+    /^(?:move|change|set|reschedule|schedule|push)\s+(?:my\s+|the\s+)?(.+?)\s+(?:to|for)\s+(today|tomorrow|upcoming)$/i,
+  );
+
+  if (dueMatch) {
+    const target = cleanReferencedTaskName(
+      dueMatch[1],
+    );
+
+    const due = normalizeDue(dueMatch[2]);
+
+    if (target && due) {
+      const task = findTask(target, tasks);
+
+      if (task) {
+        if (task.due === due) {
+          return {
+            role: 'assistant',
+            text: `"${task.title}" is already scheduled for ${due.toLowerCase()}.`,
+          };
+        }
+
+        return {
+          role: 'assistant',
+          text: `Done. I've moved "${task.title}" to ${due.toLowerCase()}.`,
+          taskAction: {
+            type: 'update',
+            taskId: task.id,
+            due,
+          },
+        };
+      }
+
+      return createTaskNotFoundResponse(
+        target,
+        tasks,
+      );
+    }
+  }
+
+  /*
+   * ---------------------------------------------------------
    * RENAME
+   *
+   * Examples:
+   * "rename dentist to doctor appointment"
+   * "change dentist to doctor appointment"
+   * ---------------------------------------------------------
    */
 
   const renameMatch = text.match(
@@ -305,7 +535,9 @@ function createTaskModificationResponse(
       renameMatch[1],
     );
 
-    const newTitle = cleanTaskTitle(renameMatch[2]);
+    const newTitle = cleanTaskTitle(
+      renameMatch[2],
+    );
 
     if (target && newTitle) {
       const task = findTask(target, tasks);
@@ -340,88 +572,9 @@ function createTaskModificationResponse(
   }
 
   /*
-   * CHANGE / MOVE TIME
-   */
-
-  const timeMatch = text.match(
-    /^(?:change|move|set|reschedule)\s+(?:my\s+|the\s+)?(.+?)\s+(?:to|at)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/i,
-  );
-
-  if (timeMatch) {
-    const target = cleanReferencedTaskName(
-      timeMatch[1],
-    );
-
-    const hour = Number(timeMatch[2]);
-    const minute = timeMatch[3] ?? '00';
-    const period = timeMatch[4].toUpperCase();
-
-    if (
-      target &&
-      hour >= 1 &&
-      hour <= 12
-    ) {
-      const time = `${hour}:${minute} ${period}`;
-      const task = findTask(target, tasks);
-
-      if (task) {
-        return {
-          role: 'assistant',
-          text: `Done. I've changed "${task.title}" to ${time}.`,
-          taskAction: {
-            type: 'update',
-            taskId: task.id,
-            time,
-          },
-        };
-      }
-
-      return createTaskNotFoundResponse(
-        target,
-        tasks,
-      );
-    }
-  }
-
-  /*
-   * CHANGE / MOVE DUE DATE
-   */
-
-  const dueMatch = text.match(
-    /^(?:move|change|set|reschedule|schedule|push)\s+(?:my\s+|the\s+)?(.+?)\s+(?:to|for)\s+(today|tomorrow|upcoming)$/i,
-  );
-
-  if (dueMatch) {
-    const target = cleanReferencedTaskName(
-      dueMatch[1],
-    );
-
-    const due = normalizeDue(dueMatch[2]);
-
-    if (target && due) {
-      const task = findTask(target, tasks);
-
-      if (task) {
-        return {
-          role: 'assistant',
-          text: `Done. I've moved "${task.title}" to ${due.toLowerCase()}.`,
-          taskAction: {
-            type: 'update',
-            taskId: task.id,
-            due,
-          },
-        };
-      }
-
-      return createTaskNotFoundResponse(
-        target,
-        tasks,
-      );
-    }
-  }
-
-  /*
+   * ---------------------------------------------------------
    * CHANGE NAME
+   * ---------------------------------------------------------
    */
 
   const changeNameMatch = text.match(
@@ -456,6 +609,16 @@ function createTaskModificationResponse(
       const task = findTask(target, tasks);
 
       if (task) {
+        if (
+          task.title.toLowerCase().trim() ===
+          newTitle.toLowerCase().trim()
+        ) {
+          return {
+            role: 'assistant',
+            text: `"${task.title}" already has that name.`,
+          };
+        }
+
         return {
           role: 'assistant',
           text: `Done. I've renamed "${task.title}" to "${newTitle}".`,
@@ -505,6 +668,7 @@ function cleanReferencedTaskName(
     .replace(/[.!?]+$/, '')
     .replace(/^(?:my|the)\s+/i, '')
     .replace(/\s+task$/i, '')
+    .replace(/^["']|["']$/g, '')
     .trim();
 }
 
@@ -519,6 +683,10 @@ function findTask(
     return undefined;
   }
 
+  /*
+   * 1. Exact title match.
+   */
+
   const exact = tasks.find(
     task =>
       normalizeTaskText(task.title) ===
@@ -529,7 +697,12 @@ function findTask(
     return exact;
   }
 
-  const containing = tasks.find(task => {
+  /*
+   * 2. Prefer a task whose complete title contains
+   *    the requested phrase.
+   */
+
+  const containing = tasks.filter(task => {
     const title = normalizeTaskText(task.title);
 
     return (
@@ -538,16 +711,30 @@ function findTask(
     );
   });
 
-  if (containing) {
-    return containing;
+  if (containing.length === 1) {
+    return containing[0];
   }
 
   /*
-   * Handle simple singular/plural references:
+   * If multiple titles contain the phrase, prefer the
+   * shortest title. This prevents a broad reference from
+   * accidentally matching a longer task first.
+   */
+
+  if (containing.length > 1) {
+    return [...containing].sort(
+      (a, b) =>
+        normalizeTaskText(a.title).length -
+        normalizeTaskText(b.title).length,
+    )[0];
+  }
+
+  /*
+   * 3. Singular/plural word matching.
    *
-   * "grocery" -> "groceries"
-   * "report" -> "reports"
-   * "proposal" -> "proposals"
+   * Only use this as a fallback so a request such as
+   * "finish the report" doesn't immediately match an
+   * unrelated task that merely shares one word.
    */
 
   const referenceWords =
@@ -556,23 +743,50 @@ function findTask(
   const stemmedReferenceWords =
     referenceWords.map(stemWord);
 
-  const fuzzy = tasks.find(task => {
-    const titleWords = normalizeTaskText(
-      task.title,
-    ).split(/\s+/);
+  const scored = tasks
+    .map(task => {
+      const titleWords = normalizeTaskText(
+        task.title,
+      ).split(/\s+/);
 
-    return stemmedReferenceWords.some(
-      referenceWord =>
-        referenceWord.length >= 4 &&
-        titleWords.some(
-          titleWord =>
-            stemWord(titleWord) ===
-            referenceWord,
-        ),
-    );
-  });
+      const matches = stemmedReferenceWords.filter(
+        referenceWord =>
+          referenceWord.length >= 4 &&
+          titleWords.some(
+            titleWord =>
+              stemWord(titleWord) ===
+              referenceWord,
+          ),
+      ).length;
 
-  return fuzzy;
+      return {
+        task,
+        matches,
+      };
+    })
+    .filter(item => item.matches > 0)
+    .sort((a, b) => b.matches - a.matches);
+
+  if (!scored.length) {
+    return undefined;
+  }
+
+  /*
+   * Only accept the fuzzy result when it has the best
+   * score and is not tied with another task.
+   */
+
+  const best = scored[0];
+
+  if (
+    scored.filter(
+      item => item.matches === best.matches,
+    ).length > 1
+  ) {
+    return undefined;
+  }
+
+  return best.task;
 }
 
 function stemWord(word: string): string {
@@ -658,9 +872,8 @@ function createTodayTasksResponse(
 
   return {
     role: 'assistant',
-    text: `You have ${today.length} task${
-      today.length === 1 ? '' : 's'
-    } today:\n\n${lines.join('\n')}`,
+    text: `You have ${today.length} task${today.length === 1 ? '' : 's'
+      } today:\n\n${lines.join('\n')}`,
   };
 }
 
@@ -686,9 +899,8 @@ function createTomorrowTasksResponse(
 
   return {
     role: 'assistant',
-    text: `You have ${tomorrow.length} task${
-      tomorrow.length === 1 ? '' : 's'
-    } tomorrow:\n\n${lines.join('\n')}`,
+    text: `You have ${tomorrow.length} task${tomorrow.length === 1 ? '' : 's'
+      } tomorrow:\n\n${lines.join('\n')}`,
   };
 }
 
@@ -734,11 +946,9 @@ function createTaskCountResponse(
 
   return {
     role: 'assistant',
-    text: `You have ${incomplete} incomplete task${
-      incomplete === 1 ? '' : 's'
-    } and ${completed} completed task${
-      completed === 1 ? '' : 's'
-    }.`,
+    text: `You have ${incomplete} incomplete task${incomplete === 1 ? '' : 's'
+      } and ${completed} completed task${completed === 1 ? '' : 's'
+      }.`,
   };
 }
 
@@ -839,11 +1049,6 @@ function extractTaskTitle(
     /^(please\s+)?(create|make)\s+(a\s+)?(new\s+)?task\s*/i,
     '',
   );
-
-  /*
-   * Handle:
-   * "Create a task to finish the report"
-   */
 
   title = title.replace(
     /^to\s+/i,
@@ -948,18 +1153,38 @@ function extractTime(
     return '9:00 AM';
   }
 
-  const hour = Number(match[1]);
-  const minute = match[2] ?? '00';
-  const period = match[3].toUpperCase();
+  return formatTime(
+    match[1],
+    match[2],
+    match[3],
+  );
+}
+
+/*
+ * -----------------------------------------------------------
+ * TIME HELPERS
+ * -----------------------------------------------------------
+ */
+
+function formatTime(
+  hourValue: string,
+  minuteValue: string | undefined,
+  periodValue: string,
+): string {
+  const hour = Number(hourValue);
+  const minute = minuteValue ?? '00';
+  const period = periodValue.toUpperCase();
 
   if (
     hour < 1 ||
-    hour > 12
+    hour > 12 ||
+    Number(minute) < 0 ||
+    Number(minute) > 59
   ) {
     return '9:00 AM';
   }
 
-  return `${hour}:${minute} ${period}`;
+  return `${hour}:${minute.padStart(2, '0')} ${period}`;
 }
 
 /*

@@ -189,7 +189,7 @@ export function createAIResponse(
   ) {
     return {
       role: 'assistant',
-      text: 'Here’s a simple list to get you started.',
+      text: "Here's a simple list to get you started.",
       card: 'list',
     };
   }
@@ -207,7 +207,7 @@ export function createAIResponse(
   ) {
     return {
       role: 'assistant',
-      text: 'Let’s make the decision simple. Tell me the options you’re weighing and I’ll help you compare them.',
+      text: "Let's make the decision simple. Tell me the options you're weighing and I'll help you compare them.",
       card: 'decision',
     };
   }
@@ -271,6 +271,26 @@ function createTaskModificationResponse(
   tasks: Task[],
 ): AIResponse | undefined {
   const lower = text.toLowerCase().trim();
+
+  /*
+ * ---------------------------------------------------------
+ * TASK HELP
+ * ---------------------------------------------------------
+ */
+
+  if (
+    /help me (with|complete) this task:/i.test(lower) ||
+    /help me with this task:/i.test(lower)
+  ) {
+    const taskTitleMatch = text.match(
+      /(?:help me (?:with|complete) this task:)\s*"([^"]+)"/i,
+    );
+
+    const taskTitle =
+      taskTitleMatch?.[1]?.trim() || 'this task';
+
+    return createTaskHelpResponse(taskTitle);
+  }
 
   if (!tasks.length) {
     return undefined;
@@ -1024,7 +1044,7 @@ function createDayPlanResponse(
   );
 
   let text =
-    'Here’s a simple plan for your day.';
+    "Here's a simple plan for your day.";
 
   if (today.length) {
     text += `\n\nToday:\n${today
@@ -1252,6 +1272,22 @@ function duePriority(
     default:
       return 3;
   }
+}
+
+function createTaskHelpResponse(
+  taskTitle: string,
+): AIResponse {
+  return {
+    role: 'assistant',
+    text: `Here's a simple way to tackle "${taskTitle}":
+
+            1. Figure out exactly what you need to accomplish.
+            2. Gather anything you need before getting started.
+            3. Take the first small step toward completing it.
+            4. Work through the remaining steps one at a time.
+
+            Best next action: Start with the smallest step you can take right now.`,
+  };
 }
 
 function createFallbackResponse(

@@ -1,3 +1,5 @@
+import { Task } from '@/types/assistant';
+import { useRouter } from 'expo-router';
 import { CheckCheck, Plus, Sparkles } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
@@ -14,6 +16,7 @@ import { useTasks } from '../../context/TaskContext';
 type Filter = 'Today' | 'Upcoming' | 'Completed';
 
 export default function TasksScreen() {
+  const router = useRouter();
   const { tasks, toggleTask } = useTasks();
   const [filter, setFilter] = useState<Filter>('Today');
 
@@ -33,6 +36,24 @@ export default function TasksScreen() {
   const progress = tasks.length
     ? Math.round((completed / tasks.length) * 100)
     : 0;
+
+  const askAIToPrioritize = () => {
+    router.push({
+      pathname: '/(tabs)/ai',
+      params: {
+        prompt: 'Prioritize my tasks',
+      },
+    });
+  };
+
+  const askAIToHelpWithTask = (task: Task) => {
+    router.push({
+      pathname: '/(tabs)/ai',
+      params: {
+        prompt: `Help me with this task: "${task.title}". Break it into simple steps and suggest the best next action.`,
+      },
+    });
+  };
 
   return (
     <ScrollView
@@ -95,7 +116,7 @@ export default function TasksScreen() {
                 style={[
                   styles.filterText,
                   filter === item &&
-                    styles.filterTextActive,
+                  styles.filterTextActive,
                 ]}
               >
                 {item}
@@ -111,7 +132,7 @@ export default function TasksScreen() {
             <TaskItem
               task={task}
               onToggle={() => toggleTask(task.id)}
-              onAI={() => {}}
+              onAI={() => askAIToHelpWithTask(task)}
             />
           </View>
         ))}
@@ -141,7 +162,13 @@ export default function TasksScreen() {
         <Text style={styles.addText}>Add a task</Text>
       </Pressable>
 
-      <View style={styles.tip}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.tip,
+          pressed && styles.tipPressed,
+        ]}
+        onPress={askAIToPrioritize}
+      >
         <Sparkles
           size={17}
           color="#977ABA"
@@ -153,7 +180,7 @@ export default function TasksScreen() {
             Ask AI to prioritize your tasks →
           </Text>
         </Text>
-      </View>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -332,6 +359,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     marginTop: 24,
+  },
+
+  tipPressed: {
+    opacity: 0.7,
   },
 
   tipText: {

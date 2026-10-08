@@ -32,6 +32,49 @@ export function createAIResponse(
 
   /*
    * ---------------------------------------------------------
+   * TASK CREATION
+   * ---------------------------------------------------------
+   */
+
+  if (
+    /^(please\s+)?(create|make)\s+(a\s+)?(new\s+)?task\b/.test(
+      lower,
+    ) ||
+    /^(please\s+)?(add|put)\s+.+\s+(to|on)\s+(my\s+)?(tasks?|task list|list)\b/.test(
+      lower,
+    ) ||
+    /^(please\s+)?(add|put)\s+.+\b(today|tomorrow|upcoming)\b/.test(
+      lower,
+    ) ||
+    /^remind me\s+to\b/.test(lower) ||
+    /^remember\s+to\b/.test(lower) ||
+    /^don't forget\s+to\b/.test(lower) ||
+    /^dont forget\s+to\b/.test(lower) ||
+    /^i need to\b/.test(lower) ||
+    /^i have to\b/.test(lower) ||
+    /^follow up\s+(with|on)\b/.test(lower)
+  ) {
+    const taskTitle =
+      extractTaskTitle(text) || 'New task';
+
+    const taskDue = extractDue(text);
+    const taskTime = extractTime(text);
+
+    return {
+      role: 'assistant',
+      text: `Done. I've added "${taskTitle}" to your tasks for ${taskDue.toLowerCase()} at ${taskTime}.`,
+      taskAction: {
+        type: 'add',
+        title: taskTitle,
+        due: taskDue,
+        time: taskTime,
+        category: 'Work',
+      },
+    };
+  }
+
+  /*
+   * ---------------------------------------------------------
    * TASK QUESTIONS
    * ---------------------------------------------------------
    */
@@ -89,6 +132,9 @@ export function createAIResponse(
     /^(please\s+)?(add|put)\s+.+\s+(to|on)\s+(my\s+)?(tasks?|task list|list)\b/.test(
       lower,
     ) ||
+    /^(please\s+)?(add|put)\s+.+\s+(today|tomorrow|upcoming)(?:\s+at\s+.+)?$/.test(
+      lower,
+    ) ||
     /^remind me\s+to\b/.test(lower) ||
     /^remember\s+to\b/.test(lower) ||
     /^don't forget\s+to\b/.test(lower) ||
@@ -100,13 +146,19 @@ export function createAIResponse(
     const taskTitle =
       extractTaskTitle(text) || 'New task';
 
+    const taskDue = extractDue(text);
+    const taskTime = extractTime(text);
+
     return {
       role: 'assistant',
-      text: "Here's the task. Add it to your task list when you're ready.",
-      card: 'task',
-      taskTitle,
-      taskDue: extractDue(text),
-      taskTime: extractTime(text),
+      text: `Done. I've added "${taskTitle}" to your tasks for ${taskDue.toLowerCase()} at ${taskTime}.`,
+      taskAction: {
+        type: 'add',
+        title: taskTitle,
+        due: taskDue,
+        time: taskTime,
+        category: 'Work',
+      },
     };
   }
 
@@ -299,17 +351,11 @@ function createTaskModificationResponse(
   /*
    * ---------------------------------------------------------
    * RESCHEDULE / MOVE TO DATE AND/OR TIME
-   *
-   * Examples:
-   * "reschedule dentist to tomorrow"
-   * "reschedule dentist to tomorrow at 3 PM"
-   * "move dentist to tomorrow at 3 PM"
-   * "move dentist to 3 PM"
    * ---------------------------------------------------------
    */
 
   const rescheduleMatch = text.match(
-    /^(?:reschedule|move|change|set|schedule|push)\s+(?:the\s+)?(?:time\s+of\s+)?(?:my\s+|the\s+)?(.+?)\s+(?:to|for)\s+(?:(today|tomorrow|upcoming)(?:\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm))?|(\d{1,2})(?::(\d{2}))?\s*(am|pm))$/i,
+    /^(?:reschedule|move|change|set|schedule|push)\s+(?:the\s+)?(?:time\s+of\s+)?(?:my\s+|the\s+)?(.+?)\s+(?:to|for)\s+(?:(today|tomorrow|upcoming)(?:\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm))?|(\\d{1,2})(?::(\d{2}))?\s*(am|pm))$/i,
   );
 
   if (rescheduleMatch) {
@@ -378,7 +424,6 @@ function createTaskModificationResponse(
           };
         }
 
-
         const parts: string[] = [];
 
         if (due) {
@@ -402,7 +447,6 @@ function createTaskModificationResponse(
         };
       }
 
-
       return createTaskNotFoundResponse(
         target,
         tasks,
@@ -413,11 +457,6 @@ function createTaskModificationResponse(
   /*
    * ---------------------------------------------------------
    * CHANGE TIME
-   *
-   * Examples:
-   * "change the time of dentist to 3 PM"
-   * "change dentist to 3 PM"
-   * "move dentist to 3 PM"
    * ---------------------------------------------------------
    */
 
@@ -468,11 +507,6 @@ function createTaskModificationResponse(
   /*
    * ---------------------------------------------------------
    * CHANGE DUE DATE
-   *
-   * Examples:
-   * "move dentist to tomorrow"
-   * "change dentist to today"
-   * "reschedule dentist for upcoming"
    * ---------------------------------------------------------
    */
 
@@ -519,10 +553,6 @@ function createTaskModificationResponse(
   /*
    * ---------------------------------------------------------
    * RENAME
-   *
-   * Examples:
-   * "rename dentist to doctor appointment"
-   * "change dentist to doctor appointment"
    * ---------------------------------------------------------
    */
 
@@ -535,6 +565,7 @@ function createTaskModificationResponse(
       renameMatch[1],
     );
 
+    // Preserve the user's original casing.
     const newTitle = cleanTaskTitle(
       renameMatch[2],
     );
@@ -586,6 +617,7 @@ function createTaskModificationResponse(
       changeNameMatch[1],
     );
 
+    // Preserve the user's original casing.
     const newTitle = cleanTaskTitle(
       changeNameMatch[2],
     );
@@ -668,7 +700,7 @@ function cleanReferencedTaskName(
     .replace(/[.!?]+$/, '')
     .replace(/^(?:my|the)\s+/i, '')
     .replace(/\s+task$/i, '')
-    .replace(/^["']|["']$/g, '')
+    .replace(/^[\"']|[\"']$/g, '')
     .trim();
 }
 
@@ -717,8 +749,7 @@ function findTask(
 
   /*
    * If multiple titles contain the phrase, prefer the
-   * shortest title. This prevents a broad reference from
-   * accidentally matching a longer task first.
+   * shortest title.
    */
 
   if (containing.length > 1) {
@@ -731,10 +762,6 @@ function findTask(
 
   /*
    * 3. Singular/plural word matching.
-   *
-   * Only use this as a fallback so a request such as
-   * "finish the report" doesn't immediately match an
-   * unrelated task that merely shares one word.
    */
 
   const referenceWords =
@@ -770,11 +797,6 @@ function findTask(
   if (!scored.length) {
     return undefined;
   }
-
-  /*
-   * Only accept the fuzzy result when it has the best
-   * score and is not tied with another task.
-   */
 
   const best = scored[0];
 
@@ -1040,9 +1062,7 @@ function createDayPlanResponse(
  * -----------------------------------------------------------
  */
 
-function extractTaskTitle(
-  text: string,
-): string {
+function extractTaskTitle(text: string): string {
   let title = text.trim();
 
   title = title.replace(
@@ -1050,18 +1070,19 @@ function extractTaskTitle(
     '',
   );
 
-  title = title.replace(
-    /^to\s+/i,
-    '',
-  );
+  title = title.replace(/^to\s+/i, '');
 
   title = title.replace(
     /^(please\s+)?(add|put)\s+/i,
     '',
   );
 
+  // Handles:
+  // "Add buy groceries to my tasks"
+  // "Add buy groceries to tasks"
+  // "Put buy groceries on my task list"
   title = title.replace(
-    /\s+(to|on)\s+(my\s+)?(tasks?|task list|list)\s*$/i,
+    /\s+(to|on)\s+(my\s+)?(tasks?|task list|list)\b.*$/i,
     '',
   );
 
@@ -1092,7 +1113,7 @@ function extractTaskTitle(
 
   title = title.replace(
     /^follow up\s+(?:with|on)\s+/i,
-    '',
+    'Follow up with ',
   );
 
   title = removeDateAndTimeFromTitle(title);
@@ -1137,6 +1158,10 @@ function extractDue(
 
   if (/\btomorrow\b/.test(lower)) {
     return 'Tomorrow';
+  }
+
+  if (/\bupcoming\b/.test(lower)) {
+    return 'Upcoming';
   }
 
   return 'Tomorrow';

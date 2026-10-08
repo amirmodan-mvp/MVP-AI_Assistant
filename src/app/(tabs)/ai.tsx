@@ -174,6 +174,15 @@ export default function AIScreen() {
 
   const executeTaskAction = (action: TaskAction) => {
     switch (action.type) {
+      case 'add':
+        addSharedTask({
+          title: action.title,
+          due: action.due,
+          time: action.time,
+          category: action.category ?? 'Work',
+        });
+        break;
+
       case 'toggle':
         toggleTask(action.taskId);
         break;

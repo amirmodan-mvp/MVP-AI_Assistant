@@ -24,6 +24,13 @@ export type ResponseCardType =
 
 export type TaskAction =
   | {
+    type: 'add';
+    title: string;
+    due: TaskDue;
+    time: string;
+    category?: string;
+  }
+  | {
     type: 'toggle';
     taskId: number;
   }

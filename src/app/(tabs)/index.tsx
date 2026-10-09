@@ -24,9 +24,9 @@ export default function HomeScreen() {
         <View style={styles.greeting}><Text style={styles.h1}>Good morning,{'\n'}<Text style={styles.purple}>John.</Text></Text><Text style={styles.sub}>Let's make today a good one.</Text></View>
 
         <Pressable style={styles.briefing} onPress={() => router.push('/ai?prompt=Plan my day')}>
-          <View style={styles.briefingTop}><View style={styles.briefIcon}><Sparkles size={17} color="#FFF" /></View><Text style={styles.briefLabel}>YOUR DAILY BRIEFING</Text><ArrowUp size={17} color="#FFF" style={{ marginLeft: 'auto', transform: [{ rotate: '45deg' }] }} /></View>
+          <View style={styles.briefingTop}><View style={styles.briefIcon}><Sparkles size={17} color="#FFF" /></View><Text style={styles.briefLabel}>YOUR DAILY BRIEFING</Text><ArrowUp size={17} color="#FFF" style={{ marginLeft: 'auto', transform: [{ rotate: '25deg' }] }} /></View>
           <View style={styles.briefMain}><View style={{ flex: 1 }}><Text style={styles.briefTitle}>A little clarity for today.</Text><Text style={styles.briefSub}>You have a full day ahead. Let's take it one step at a time.</Text></View><View style={styles.briefOrb}><Orb /></View></View>
-          <View style={styles.stats}><Text style={styles.stat}><Text style={styles.statStrong}>{todayCount}</Text> tasks</Text><View style={styles.statDot}/><Text style={styles.stat}><Text style={styles.statStrong}>2</Text> events</Text><View style={styles.statDot}/><Text style={styles.stat}><Text style={styles.statStrong}>1</Text> reminder</Text></View>
+          <View style={styles.stats}><Text style={styles.stat}><Text style={styles.statStrong}>{todayCount}</Text> tasks</Text><View style={styles.statDot} /><Text style={styles.stat}><Text style={styles.statStrong}>2</Text> events</Text><View style={styles.statDot} /><Text style={styles.stat}><Text style={styles.statStrong}>1</Text> reminder</Text></View>
         </Pressable>
 
         <SectionHeading eyebrow="YOUR AI COMPANION" title="Where should we start?" />
@@ -62,7 +62,7 @@ function Header() {
   return (
     <View style={styles.header}>
       <Pressable onPress={() => router.replace('/')} style={styles.brand}><View style={styles.brandIcon}><Sparkles size={15} color="#FFF" /></View><Text style={styles.brandText}>dayone<Text style={styles.brandDot}>.</Text></Text></Pressable>
-      <View style={styles.actions}><Pressable onPress={() => {}}><Search size={20} color="#55505D" /></Pressable><Pressable onPress={() => {}}><Bell size={20} color="#55505D" /></Pressable><Pressable style={styles.avatar} onPress={() => router.push('/more')}><Text style={styles.avatarText}>J</Text></Pressable></View>
+      <View style={styles.actions}><Pressable onPress={() => { }}><Search size={20} color="#55505D" /></Pressable><Pressable onPress={() => { }}><Bell size={20} color="#55505D" /></Pressable><Pressable style={styles.avatar} onPress={() => router.push('/more')}><Text style={styles.avatarText}>J</Text></Pressable></View>
     </View>
   );
 }
@@ -89,8 +89,19 @@ const styles = StyleSheet.create({
   briefIcon: { width: 23, height: 23, borderRadius: 7, backgroundColor: 'rgba(255,255,255,.18)', alignItems: 'center', justifyContent: 'center' },
   briefLabel: { color: '#EBE2F6', fontSize: 9, fontWeight: '800', letterSpacing: 1.1 },
   briefMain: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13 },
-  briefTitle: { color: '#FFF', fontSize: 18, fontWeight: '700', maxWidth: 185 },
-  briefSub: { color: '#E6DCF5', fontSize: 10, lineHeight: 15, maxWidth: 184, marginTop: 6 },
+  briefTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '700',
+    maxWidth: 260,
+  },
+  briefSub: {
+    color: '#E6DCF5',
+    fontSize: 10,
+    lineHeight: 15,
+    maxWidth: 260,
+    marginTop: 6,
+  },
   briefOrb: { width: 95, height: 80, alignItems: 'center', justifyContent: 'center' },
   stats: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,.22)', height: 42, flexDirection: 'row', alignItems: 'center', gap: 12 },
   stat: { color: '#E9DEF5', fontSize: 10 },

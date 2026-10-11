@@ -8,6 +8,7 @@ import {
   Plus,
   Search,
   Sparkles,
+  X,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
@@ -192,7 +193,10 @@ export default function NotesScreen() {
         <Text style={styles.sectionTitle}>Your space</Text>
 
         <Text style={styles.count}>
-          {notes.length} {notes.length === 1 ? 'note' : 'notes'}
+          {search.trim()
+            ? `${filteredNotes.length} ${filteredNotes.length === 1 ? 'result' : 'results'
+            }`
+            : `${notes.length} ${notes.length === 1 ? 'note' : 'notes'}`}
         </Text>
       </View>
 
@@ -208,6 +212,17 @@ export default function NotesScreen() {
           style={styles.searchInput}
           accessibilityLabel="Search notes"
         />
+        {search.length > 0 && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+            onPress={() => setSearch('')}
+            hitSlop={10}
+            style={styles.clearSearchButton}
+          >
+            <X size={16} color="#928A97" />
+          </Pressable>
+        )}
       </View>
 
       {!isLoaded ? (
@@ -438,6 +453,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: '#393341',
     fontSize: 12,
+  },
+  clearSearchButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 4,
   },
   noteList: {
     gap: 3,
